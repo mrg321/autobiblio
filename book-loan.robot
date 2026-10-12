@@ -2,12 +2,11 @@
 Documentation    Robot para comprobar disponibilidad y solicitar préstamo de prensa en eBiblio Madrid.
 Library          Browser
 Library          DateTime
+Resource         credentials.resource
 
 *** Variables ***
 ${URL_LOGIN}        https://madrid.ebiblio.es/
 ${PERIODICO}        El País, edición Madrid
-${USUARIO}          userrobot
-${PASSWORD}         passwordrobot
 
 *** Test Cases ***
 Login y Prestar Periódico
