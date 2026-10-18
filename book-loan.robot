@@ -7,11 +7,12 @@ Resource         credentials.resource
 *** Variables ***
 ${URL_LOGIN}        https://madrid.ebiblio.es/
 ${PERIODICO}        El País, edición Madrid
+${HEADLESS}         ${False}
 
 *** Test Cases ***
 Login y Prestar Periódico
     # Abrir navegador en modo segundo plano (headless) o no
-    New Browser    browser=chromium    headless=False
+    New Browser    browser=chromium    headless=${HEADLESS}
     New Page       ${URL_LOGIN}
 
     # Iniciar sesión
