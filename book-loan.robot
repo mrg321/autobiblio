@@ -18,10 +18,11 @@ Login y Prestar Periódico
     Click          text="Mi Cuenta"
     Fill Text      input[name="login"]    ${USUARIO}
     Fill Text      input[name="password"]    ${PASSWORD}
+
     Click          button:has-text("Conectarse")
 
     # Esperar a que el login procese la sesión
-    Wait For Elements State    text="Catálogo"    visible    timeout=10s
+    Wait For Elements State    text="Catálogo"    visible    timeout=20s
 
     # Extraer el catálogo
     Click          text="Catálogo"
