@@ -7,7 +7,7 @@ Resource         credentials.resource
 *** Variables ***
 ${URL_LOGIN}        https://madrid.ebiblio.es/
 ${PERIODICO}        El País, edición Madrid
-${HEADLESS}         ${False}
+${HEADLESS}         ${True}
 
 *** Test Cases ***
 Login y Prestar Periódico
