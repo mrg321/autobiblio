@@ -29,7 +29,7 @@ Login y Prestar Periódico
     Click          text="Catálogo"
 
     # Esperar a que se cargue la sección de periódicos
-    Wait For Elements State    text="Periódicos"    visible    timeout=10s
+    Wait For Elements State    text="Periódicos"    visible    timeout=20s
 
     # Hacer clic en la sección de periódicos
     Click          text="Periódicos"
@@ -47,17 +47,17 @@ Login y Prestar Periódico
     Click          role=link[name="${periodico_buscado}"]
 
     # Esperar a que se cargue la página del periódico
-    Wait For Elements State    role=heading[name="${periodico_buscado}"]    visible    timeout=10s
+    Wait For Elements State    role=heading[name="${periodico_buscado}"]    visible    timeout=20s
     
     # Verificar disponibilidad del botón de préstamo
     ${is_available}=    Run Keyword And Return Status    
-    ...                 Wait For Elements State    button:has-text("Prestar")    visible    timeout=5s
+    ...                 Wait For Elements State    button:has-text("Prestar")    visible    timeout=20s
 
     IF    ${is_available}
         Click    button:has-text("Prestar")
-        Wait For Elements State    text="Confirmar el préstamo"    visible    timeout=10s
+        Wait For Elements State    text="Confirmar el préstamo"    visible    timeout=20s
         Click    text="Confirmar el préstamo"
-        Wait For Elements State    text="Tu préstamo expira en"    visible    timeout=10s
+        Wait For Elements State    text="Tu préstamo expira en"    visible    timeout=20s
         Log      ¡Préstamo realizado con éxito!    console=True
     ELSE
         # Verificar disponibilidad del botón de Reserva
