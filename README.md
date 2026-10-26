@@ -14,6 +14,7 @@ attempts to place a reservation if that option is offered.
 - `setup.ps1` — creates the Python virtual environment, installs dependencies,
   and initializes the Browser library with Chromium.
 - `run.ps1` — runs the Robot Framework test.
+- `book-loan-colab.ipynb` — prepares and runs the workflow in Google Colab.
 
 ## Prerequisites (Windows)
 
@@ -65,3 +66,32 @@ without executing the browser actions, run:
 ```powershell
 .\.venv\Scripts\robot.exe --dryrun --output NONE --log NONE --report NONE .\book-loan.robot
 ```
+
+## Google Colab
+
+Open [book-loan-colab.ipynb](./book-loan-colab.ipynb) in Google Colab and run
+the cells in order. Upload `book-loan.robot` and your private
+`credentials.resource` when prompted. The notebook installs the pinned
+dependencies, initializes Chromium, and performs a Robot Framework dry run
+before live execution. Live automation is disabled by default; explicitly
+enable it in the notebook only when you are ready to allow a real loan or
+reservation attempt. Do not share the notebook with credentials or saved
+outputs.
+
+## GitHub Actions
+
+The workflow in `.github/workflows/book-loan.yml` runs the book-loan task daily
+at 5 a.m. Madrid time. GitHub Actions schedules use UTC, so the workflow has
+3:00 and 4:00 UTC triggers and proceeds only when it is 5 a.m. in Madrid.
+Scheduled runs can be delayed during busy periods, so this is not an exact-time
+guarantee. GitHub only runs scheduled workflows from the repository's default
+branch.
+
+Before enabling the workflow, add repository secrets named
+`EBIBLIO_USERNAME` and `EBIBLIO_PASSWORD` under **Settings → Secrets and
+variables → Actions**. The workflow creates `credentials.resource` at runtime
+from those secrets; do not store credentials in the workflow or repository.
+
+This is a live run: it can submit a loan or reservation. The task can wait up
+to four hours for the newspaper to appear, so a run may use significant runner
+time. Inspect run status and console output in the repository's **Actions** tab.

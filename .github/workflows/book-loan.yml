@@ -1,0 +1,71 @@
+name: Daily eBiblio book loan
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+    - cron: '0 4 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-book-loan
+  cancel-in-progress: false
+
+jobs:
+  book-loan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check Madrid local time
+        id: local-time
+        shell: bash
+        run: |
+          local_hour="$(TZ=Europe/Madrid date +%H)"
+          if [[ "$local_hour" == "05" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping this UTC trigger; it is not 05:00 in Madrid."
+          fi
+
+      - name: Check out repository
+        if: steps.local-time.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Create credentials resource
+        if: steps.local-time.outputs.run == 'true'
+        env:
+          EBIBLIO_USERNAME: ${{ secrets.EBIBLIO_USERNAME }}
+          EBIBLIO_PASSWORD: ${{ secrets.EBIBLIO_PASSWORD }}
+        shell: bash
+        run: |
+          if [[ -z "$EBIBLIO_USERNAME" || -z "$EBIBLIO_PASSWORD" ]]; then
+            echo "::error::Set the EBIBLIO_USERNAME and EBIBLIO_PASSWORD repository secrets."
+            exit 1
+          fi
+          printf '*** Variables ***\n${USUARIO}    %s\n${PASSWORD}    %s\n' \
+            "$EBIBLIO_USERNAME" "$EBIBLIO_PASSWORD" > credentials.resource
+
+      - name: Set up Python
+        if: steps.local-time.outputs.run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Set up Node.js
+        if: steps.local-time.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies and Chromium
+        if: steps.local-time.outputs.run == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          rfbrowser init chromium
+
+      - name: Run book-loan task
+        if: steps.local-time.outputs.run == 'true'
+        run: python -m robot --output NONE --log NONE --report NONE book-loan.robot
