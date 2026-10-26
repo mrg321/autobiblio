@@ -1,6 +1,7 @@
 name: Daily eBiblio book loan
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 3 * * *'
     - cron: '0 4 * * *'
@@ -21,12 +22,16 @@ jobs:
         id: local-time
         shell: bash
         run: |
-          local_hour="$(TZ=Europe/Madrid date +%H)"
-          if [[ "$local_hour" == "05" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping this UTC trigger; it is not 05:00 in Madrid."
+            local_hour="$(TZ=Europe/Madrid date +%H)"
+            if [[ "$local_hour" == "05" ]]; then
+              echo "run=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              echo "Skipping this UTC trigger; it is not 05:00 in Madrid."
+            fi
           fi
 
       - name: Check out repository

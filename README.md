@@ -85,7 +85,8 @@ at 5 a.m. Madrid time. GitHub Actions schedules use UTC, so the workflow has
 3:00 and 4:00 UTC triggers and proceeds only when it is 5 a.m. in Madrid.
 Scheduled runs can be delayed during busy periods, so this is not an exact-time
 guarantee. GitHub only runs scheduled workflows from the repository's default
-branch.
+branch. To start a run manually, open **Actions → Daily eBiblio book loan →
+Run workflow**. Manual runs do not wait for the Madrid 5 a.m. schedule.
 
 Before enabling the workflow, add repository secrets named
 `EBIBLIO_USERNAME` and `EBIBLIO_PASSWORD` under **Settings → Secrets and
