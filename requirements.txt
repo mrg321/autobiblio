@@ -1,2 +1,7 @@
 robotframework==7.5
 robotframework-browser==20.6.0
+./vendor/lcpdedrm-cli
+pymupdf4llm==0.2.9
+google-genai==2.34.0
+pydantic==2.14.2
+pypandoc==1.15

@@ -1,39 +1,69 @@
 # Autobiblio
 
 Autobiblio is a Robot Framework browser-automation project for checking the
-availability of the current day's *El País, edición Madrid* in eBiblio Madrid.
-When the newspaper is available, the test attempts to borrow it; otherwise, it
+availability of configured newspapers in eBiblio Madrid. It checks the
+current-day edition of each newspaper in the `@{PERIODICO}` list in
+`book-loan.robot`; add other exact catalog titles as additional list values.
+When an edition is available, the test attempts to borrow it; otherwise, it
 attempts to place a reservation if that option is offered.
+After each successful loan, the workflow downloads the offline-reading file
+offered by eBiblio into `downloads/`, with a timestamped filename. This folder
+is ignored by Git so borrowed content is not committed. The files are available
+to later steps in the same local run or GitHub Actions job.
 
 ## Project contents
 
 - `book-loan.robot` — the Robot Framework test and browser workflow.
+- `book-borrow-process.ps1` — runs the book-borrow, conversion, and Kindle-send
+  suites in sequence.
+- `.github/workflows/book-borrow.yml` — prepares the Windows runner and runs
+  the book-borrow process daily.
 - `credentials.resource` — local eBiblio login variables. This file is excluded
   from Git; create it locally and provide it securely when packaging the project.
 - `requirements.txt` — pinned Python dependencies.
 - `setup.ps1` — creates the Python virtual environment, installs dependencies,
   and initializes the Browser library with Chromium.
 - `run.ps1` — runs the Robot Framework test.
+- `text-to-articles.robot` — processes files in `results/txt` once, saving each
+  input's articles separately under `results/cleaned_articles`.
+- `send-to-kindle.robot` — sends EPUB files directly from `results/epub` to
+  Kindle and records successful sends under `results/epub/.sent`.
 - `book-loan-colab.ipynb` — prepares and runs the workflow in Google Colab.
 
-## Prerequisites (Windows)
+## Prerequisites (Windows and Linux)
 
-- Python 3.14 installed and available through the `py` launcher.
+- Python 3.14 installed.
 - Node.js and npm installed and available on `PATH`.
 - Internet access for installing Python packages and downloading Chromium.
 
 ## Install
 
-Place the project files in a folder, then open PowerShell in that folder and run:
+On Windows, open PowerShell in the project folder and run:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 .\setup.ps1
 ```
 
+On Linux, open a shell in the project folder and run:
+
+```sh
+python3.14 -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+PLAYWRIGHT_BROWSERS_PATH=0 rfbrowser init chromium
+```
+
+The Windows setup also installs the pinned Pandoc executable into `.venv`.
+On Linux, install Pandoc separately and ensure `pandoc` is available on `PATH`
+before running `text-to-epub.robot`.
+
 The setup creates `.venv` in the project folder and installs Chromium into the
 venv-local Playwright browser cache. You do not need to copy a pre-existing
-`.venv` from another computer.
+`.venv` from another computer. The `setup.ps1` and `run.ps1` helpers are for
+Windows; on Linux, activate `.venv` as shown above and run Robot Framework
+directly.
 
 Create `credentials.resource` in the project folder with your own eBiblio
 credentials:
@@ -44,8 +74,9 @@ ${USUARIO}     your_username
 ${PASSWORD}    your_password
 ```
 
-Keep this file private. It is gitignored; do not commit it or include it in a
-shared package. Provide it separately and securely on the target computer.
+Keep this file private; do not commit it or include it in a shared package.
+Although it is listed in `.gitignore`, that rule does not stop Git tracking a
+file that is already tracked.
 
 ## Run
 
@@ -55,9 +86,51 @@ From the project folder, run:
 .\run.ps1
 ```
 
+On Linux, with `.venv` activated, run:
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH=0 python -m robot book-loan.robot
+```
+
 The script sets `PLAYWRIGHT_BROWSERS_PATH=0` so Playwright uses the browser
-cache installed with this venv, then runs `book-loan.robot`. Robot Framework
-writes its run reports in the current project folder by default.
+cache installed with this venv, then runs the Robot tasks in sequence. It stops
+on the first nonzero Robot exit code and displays a status and duration for
+each task. Separate XML, log, and report files are saved under
+`results/robot-reports/`. Successful loans also save the eBiblio download
+under `downloads/` on both platforms. The provider may supply an offline-reader
+file rather than a plain PDF; the automation saves the file as offered and
+does not convert it.
+
+The processing tasks can also be run individually. To send EPUB files directly
+to Kindle, set these variables in the private
+`credentials.resource` file:
+
+```robot
+*** Variables ***
+${KINDLE_SENDER}          your_gmail_address
+${KINDLE_APP_PASSWORD}    your_gmail_app_password
+${KINDLE_TARGET_EMAIL}    your_kindle_email
+```
+
+Then run the task from the project root:
+
+```powershell
+.\.venv\Scripts\robot.exe --outputdir .\results\robot-reports .\send-to-kindle.robot
+```
+
+The task uses `vendor/send2kindle/send2kindle.py`. It marks an EPUB as sent
+only after the sender reports success and skips files with an existing marker.
+The timestamp prefix before the first underscore is removed from the Kindle
+attachment name; the local EPUB filename is unchanged.
+To intentionally send a file again, remove its corresponding
+`results/epub/.sent/<filename>.sent` marker. The sender requests Amazon to
+convert the EPUB for Kindle. Do not put credentials in the
+Robot file or commit them. The task loads credentials from `credentials.resource`
+and supplies them to the sender through its process environment. SMTP errors
+identify the failing connection stage; for authentication errors, verify that
+the Gmail app password in `credentials.resource` is current. Files are marked
+only after Gmail confirms acceptance, and the sender does not require a
+successful SMTP disconnect after that confirmation.
 
 **Caution:** This is not a dry run. The test logs into eBiblio and can submit a
 loan or reservation if available. To validate parsing and keyword resolution
@@ -81,18 +154,26 @@ outputs.
 ## GitHub Actions
 
 The workflow in `.github/workflows/book-loan.yml` runs the book-loan task daily
-at 5 a.m. Madrid time. GitHub Actions schedules use UTC, so the workflow has
-3:00 and 4:00 UTC triggers and proceeds only when it is 5 a.m. in Madrid.
-Scheduled runs can be delayed during busy periods, so this is not an exact-time
-guarantee. GitHub only runs scheduled workflows from the repository's default
-branch. To start a run manually, open **Actions → Daily eBiblio book loan →
-Run workflow**. Manual runs do not wait for the Madrid 5 a.m. schedule.
+at 5 a.m. Madrid time. The workflow in `.github/workflows/book-borrow.yml`
+runs `book-borrow-process.ps1` on Windows, which borrows and downloads books,
+then runs the transformation and Kindle-send tasks. Both workflows can also
+be started manually from the **Actions** tab.
 
-Before enabling the workflow, add repository secrets named
+GitHub Actions schedules use UTC, so the workflows have 3:00 and 4:00 UTC
+triggers and proceed only when it is 5 a.m. in Madrid. Scheduled runs can be
+delayed during busy periods, so this is not an exact-time guarantee. GitHub
+only runs scheduled workflows from the repository's default branch.
+
+Before enabling either workflow, add repository secrets named
 `EBIBLIO_USERNAME` and `EBIBLIO_PASSWORD` under **Settings → Secrets and
 variables → Actions**. The workflow creates `credentials.resource` at runtime
 from those secrets; do not store credentials in the workflow or repository.
+The book-borrow workflow also requires `KINDLE_SENDER`,
+`KINDLE_APP_PASSWORD`, and `KINDLE_TARGET_EMAIL` secrets for its Kindle-send
+step.
 
-This is a live run: it can submit a loan or reservation. The task can wait up
-to four hours for the newspaper to appear, so a run may use significant runner
-time. Inspect run status and console output in the repository's **Actions** tab.
+These are live workflows: they can submit a loan or reservation, and the
+book-borrow process can email EPUBs to Kindle. The book-loan workflow can wait
+up to four hours for the newspaper to appear, so a run may use significant
+runner time. Inspect run status and console output in the repository's
+**Actions** tab.

@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: lcpdedrm-cli
+Version: 1.0.0
+Summary: Standalone Readium LCP decryption command from DeDRM_plugin
+License-Expression: GPL-3.0-only
+Requires-Python: >=3.9
+License-File: NOTICE.md
+Requires-Dist: lxml
+Requires-Dist: pycryptodome
+Dynamic: license-file

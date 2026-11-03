@@ -1,0 +1,2 @@
+[console_scripts]
+lcpdedrm = standalone.lcpdedrmcommandline:main

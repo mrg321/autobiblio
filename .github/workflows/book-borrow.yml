@@ -1,0 +1,119 @@
+name: Daily eBiblio book borrow and processing
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'
+    - cron: '0 10 * * *'
+    - cron: '0 11 * * *'    
+    - cron: '0 12 * * *'    
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-book-borrow
+  cancel-in-progress: false
+
+jobs:
+  book-borrow:
+    runs-on: windows-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check Madrid local time
+        id: local-time
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            "run=true" >> $env:GITHUB_OUTPUT
+          } else {
+            $madridTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId(
+              [DateTimeOffset]::UtcNow,
+              'Romance Standard Time'
+            )
+            if ($madridTime.Hour -eq 5) {
+              "run=true" >> $env:GITHUB_OUTPUT
+            } else {
+              "run=false" >> $env:GITHUB_OUTPUT
+              Write-Output 'Skipping this UTC trigger; it is not 05:00 in Madrid.'
+            }
+          }
+
+      - name: Check out repository
+        if: steps.local-time.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Create credentials resource
+        if: steps.local-time.outputs.run == 'true'
+        env:
+          EBIBLIO_USERNAME: ${{ secrets.EBIBLIO_USERNAME }}
+          EBIBLIO_PASSWORD: ${{ secrets.EBIBLIO_PASSWORD }}
+          KINDLE_SENDER: ${{ secrets.KINDLE_SENDER }}
+          KINDLE_APP_PASSWORD: ${{ secrets.KINDLE_APP_PASSWORD }}
+          KINDLE_TARGET_EMAIL: ${{ secrets.KINDLE_TARGET_EMAIL }}
+        shell: pwsh
+        run: |
+          $requiredSecrets = [ordered]@{
+            EBIBLIO_USERNAME = $env:EBIBLIO_USERNAME
+            EBIBLIO_PASSWORD = $env:EBIBLIO_PASSWORD
+            KINDLE_SENDER = $env:KINDLE_SENDER
+            KINDLE_APP_PASSWORD = $env:KINDLE_APP_PASSWORD
+            KINDLE_TARGET_EMAIL = $env:KINDLE_TARGET_EMAIL
+          }
+          $missingSecrets = @(
+            $requiredSecrets.GetEnumerator() |
+              Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } |
+              ForEach-Object { $_.Key }
+          )
+          if ($missingSecrets.Count -gt 0) {
+            throw "Set these repository secrets: $($missingSecrets -join ', ')."
+          }
+
+          $credentials = @"
+          *** Variables ***
+          `${USUARIO}    $env:EBIBLIO_USERNAME
+          `${PASSWORD}    $env:EBIBLIO_PASSWORD
+          `${KINDLE_SENDER}    $env:KINDLE_SENDER
+          `${KINDLE_APP_PASSWORD}    $env:KINDLE_APP_PASSWORD
+          `${KINDLE_TARGET_EMAIL}    $env:KINDLE_TARGET_EMAIL
+          "@
+          $credentialsPath = Join-Path $env:GITHUB_WORKSPACE 'credentials.resource'
+          [System.IO.File]::WriteAllText(
+            $credentialsPath,
+            $credentials,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: Set up Python
+        if: steps.local-time.outputs.run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Set up Node.js
+        if: steps.local-time.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies and Chromium
+        if: steps.local-time.outputs.run == 'true'
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+          .\setup.ps1
+
+      - name: Run book-borrow process
+        if: steps.local-time.outputs.run == 'true'
+        shell: pwsh
+        run: .\book-borrow-process.ps1
+
+      - name: Upload downloaded books
+        if: always() && steps.local-time.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ebiblio-book-borrow-downloads
+          path: results/downloads/
+          if-no-files-found: warn
+          retention-days: 4
+          

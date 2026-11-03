@@ -2,3 +2,6 @@
 results/
 playwright-log.txt
 credentials.resource
+downloads/
+PIPE
+vendor/lcpdedrm-cli/lcpdedrm.py

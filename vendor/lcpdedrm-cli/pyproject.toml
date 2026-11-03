@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lcpdedrm-cli"
+version = "1.0.0"
+description = "Standalone Readium LCP decryption command from DeDRM_plugin"
+requires-python = ">=3.9"
+license = "GPL-3.0-only"
+dependencies = [
+    "lxml",
+    "pycryptodome",
+]
+
+[project.scripts]
+lcpdedrm = "standalone.lcpdedrmcommandline:main"
+
+[tool.setuptools]
+py-modules = ["lcpdedrm"]
+packages = ["standalone"]

@@ -1,0 +1,11 @@
+NOTICE.md
+lcpdedrm.py
+pyproject.toml
+lcpdedrm_cli.egg-info/PKG-INFO
+lcpdedrm_cli.egg-info/SOURCES.txt
+lcpdedrm_cli.egg-info/dependency_links.txt
+lcpdedrm_cli.egg-info/entry_points.txt
+lcpdedrm_cli.egg-info/requires.txt
+lcpdedrm_cli.egg-info/top_level.txt
+standalone/__init__.py
+standalone/lcpdedrmcommandline.py

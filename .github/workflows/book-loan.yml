@@ -3,8 +3,7 @@ name: Daily eBiblio book loan
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * *'
-    - cron: '0 4 * * *'
+    - cron: '0 7 * * *'
 
 permissions:
   contents: read
@@ -74,3 +73,12 @@ jobs:
       - name: Run book-loan task
         if: steps.local-time.outputs.run == 'true'
         run: python -m robot --output NONE --log NONE --report NONE book-loan.robot
+
+      - name: Upload downloaded books
+        if: always() && steps.local-time.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ebiblio-downloads
+          path: downloads/
+          if-no-files-found: warn
+          retention-days: 7
