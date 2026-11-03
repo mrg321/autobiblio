@@ -32,11 +32,7 @@ jobs:
               echo "Skipping this UTC trigger; it is not 05:00 in Madrid."
             fi
           fi
-
-      - name: Check out repository
-        if: steps.local-time.outputs.run == 'true'
-        uses: actions/checkout@v4
-
+          
       - name: Create credentials resource
         if: steps.local-time.outputs.run == 'true'
         env:
@@ -81,4 +77,4 @@ jobs:
           name: ebiblio-downloads
           path: results/downloads/
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 4

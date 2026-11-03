@@ -9,7 +9,7 @@ Resource         credentials.resource
 *** Variables ***
 ${URL_LOGIN}        https://madrid.ebiblio.es/
 @{PERIODICO}        El País, edición Madrid    El Mundo (Ed. Nacional)
-${HEADLESS}         ${False}
+${HEADLESS}         ${True}
 ${DOWNLOAD}         ${False}
 
 *** Test Cases ***
@@ -90,23 +90,26 @@ Prestar Y Descargar Libro
     Wait For Elements State    text="Tu préstamo expira en"    visible    timeout=20s
     Log    ¡Préstamo realizado con éxito!    console=True
 
-    Wait For Elements State
-    ...    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"]
-    ...    visible
-    ...    timeout=20s
-    ${download_dir}=    Set Variable    ${OUTPUT DIR}${/}downloads
-    Create Directory    ${download_dir}
-    ${download_timestamp}=    Get Current Date    result_format=%Y%m%dT%H%M%S%f
-    ${download_path}=    Set Variable
-    ...    ${download_dir}${/}${download_timestamp}_download
-    ${download_promise}=    Promise To Wait For Download
-    ...    ${download_path}
-    ...    download_timeout=5 minutes
-    Click    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"]
-    ${download}=    Wait For    ${download_promise}
-    Should Not Be Empty    ${download}[suggestedFilename]
-    ${download_file}=    Set Variable
-    ...    ${download_dir}${/}${download_timestamp}_${download}[suggestedFilename]
-    Move File    ${download}[saveAs]    ${download_file}
-    File Should Exist    ${download_file}
-    Log    Archivo descargado: ${download_file}    console=True
+    IF    ${DOWNLOAD}
+        Wait For Elements State
+        ...    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"]
+        ...    visible
+        ...    timeout=20s
+        ${download_dir}=    Set Variable    ${OUTPUT DIR}${/}downloads
+        Create Directory    ${download_dir}
+        ${download_timestamp}=    Get Current Date    result_format=%Y%m%dT%H%M%S%f
+        ${download_path}=    Set Variable
+        ...    ${download_dir}${/}${download_timestamp}_download
+        ${download_promise}=    Promise To Wait For Download
+        ...    ${download_path}
+        ...    download_timeout=5 minutes
+        Click    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"]
+        ${download}=    Wait For    ${download_promise}
+        Should Not Be Empty    ${download}[suggestedFilename]
+        ${download_file}=    Set Variable
+        ...    ${download_dir}${/}${download_timestamp}_${download}[suggestedFilename]
+        Move File    ${download}[saveAs]    ${download_file}
+        File Should Exist    ${download_file}
+        Log    Archivo descargado: ${download_file}    console=True
+
+    END
