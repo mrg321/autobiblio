@@ -79,6 +79,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ebiblio-downloads
-          path: downloads/
+          path: results/downloads/
           if-no-files-found: warn
           retention-days: 7
