@@ -83,6 +83,16 @@ jobs:
             $credentials,
             [System.Text.UTF8Encoding]::new($false)
           )
+      
+       # Rebuild script from secrets
+      - name: Restore private Python script
+        if: steps.local-time.outputs.run == 'true'
+        shell: bash
+        env:
+          ADDITIONAL_SCRIPT: ${{ secrets.EXTRA_CODE }}
+        run: |
+          umask 077
+          printf '%s' "$ADDITIONAL_SCRIPT" > vendor/lcpdedrm-cli/lcpdedrm.py
 
       - name: Set up Python
         if: steps.local-time.outputs.run == 'true'
