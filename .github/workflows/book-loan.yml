@@ -47,6 +47,10 @@ jobs:
           printf '*** Variables ***\n${USUARIO}    %s\n${PASSWORD}    %s\n' \
             "$EBIBLIO_USERNAME" "$EBIBLIO_PASSWORD" > credentials.resource
 
+      - name: Checkout repository
+        if: steps.local-time.outputs.run == 'true'
+        uses: actions/checkout@v4
+
       - name: Set up Python
         if: steps.local-time.outputs.run == 'true'
         uses: actions/setup-python@v5
