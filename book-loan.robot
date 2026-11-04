@@ -5,6 +5,7 @@ Library          DateTime
 Library          OperatingSystem
 Library          String
 Resource         credentials.resource
+Test Teardown     Capture Screenshot If Test Failed
 
 *** Variables ***
 ${URL_LOGIN}        https://madrid.ebiblio.es/
@@ -84,6 +85,13 @@ Login y Prestar Periódico
     Close Browser
 
 *** Keywords ***
+Capture Screenshot If Test Failed
+    IF    $TEST_STATUS == 'FAIL'
+        ${screenshots_dir}=    Set Variable    ${OUTPUT DIR}${/}screenshots
+        Create Directory    ${screenshots_dir}
+        Take Screenshot    filename=${screenshots_dir}${/}failure.png
+    END
+
 Prestar Y Descargar Libro
     Wait For Elements State    text="Confirmar el préstamo"    visible    timeout=20s
     Click    text="Confirmar el préstamo"

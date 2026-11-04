@@ -157,7 +157,10 @@ The workflow in `.github/workflows/book-loan.yml` runs the book-loan task daily
 at 5 a.m. Madrid time. The workflow in `.github/workflows/book-borrow.yml`
 runs `book-borrow-process.ps1` on Windows, which borrows and downloads books,
 then runs the transformation and Kindle-send tasks. Both workflows can also
-be started manually from the **Actions** tab.
+be started manually from the **Actions** tab. The book-loan workflow runs the
+browser headlessly and uploads a `robot-diagnostics` artifact containing the
+Robot output, HTML log and report, and a PNG screenshot when the test fails.
+The artifact is retained for seven days.
 
 GitHub Actions schedules use UTC, so the workflows have 3:00 and 4:00 UTC
 triggers and proceed only when it is 5 a.m. in Madrid. Scheduled runs can be

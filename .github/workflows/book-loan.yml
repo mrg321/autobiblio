@@ -33,6 +33,10 @@ jobs:
             fi
           fi
           
+      - name: Checkout repository
+        if: steps.local-time.outputs.run == 'true'
+        uses: actions/checkout@v4
+
       - name: Create credentials resource
         if: steps.local-time.outputs.run == 'true'
         env:
@@ -46,10 +50,6 @@ jobs:
           fi
           printf '*** Variables ***\n${USUARIO}    %s\n${PASSWORD}    %s\n' \
             "$EBIBLIO_USERNAME" "$EBIBLIO_PASSWORD" > credentials.resource
-
-      - name: Checkout repository
-        if: steps.local-time.outputs.run == 'true'
-        uses: actions/checkout@v4
 
       - name: Set up Python
         if: steps.local-time.outputs.run == 'true'
@@ -72,7 +72,29 @@ jobs:
 
       - name: Run book-loan task
         if: steps.local-time.outputs.run == 'true'
-        run: python -m robot --output NONE --log NONE --report NONE book-loan.robot
+        run: >-
+          python -m robot
+          --outputdir results
+          --output output.xml
+          --log log.html
+          --report report.html
+          --loglevel INFO
+          --removekeywords "name:Fill Text"
+          --variable HEADLESS:True
+          book-loan.robot
+
+      - name: Upload Robot reports and screenshots
+        if: always() && steps.local-time.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-diagnostics
+          path: |
+            results/output.xml
+            results/log.html
+            results/report.html
+            results/screenshots/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload downloaded books
         if: always() && steps.local-time.outputs.run == 'true'
