@@ -122,8 +122,28 @@ jobs:
         if: always() && steps.local-time.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ebiblio-book-borrow-downloads
-          path: results/downloads/
+          name: ebiblio-book-borrow-decrypted
+          path: results/decrypted/
           if-no-files-found: warn
           retention-days: 4
-          
+
+      - name: Upload downloaded books
+        if: always() && steps.local-time.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ebiblio-book-borrow-txt
+          path: results/txt/
+          if-no-files-found: warn
+          retention-days: 4
+
+      - name: Upload Robot reports and screenshots
+        if: always() && steps.local-time.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-diagnostics
+          path: |
+            results/robot-reports/
+            playwright-log*.txt
+            results/playwright-log*.txt
+          if-no-files-found: warn
+          retention-days: 7

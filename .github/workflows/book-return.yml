@@ -1,0 +1,73 @@
+name: Return eBiblio books
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eBiblio-book-return
+  cancel-in-progress: false
+
+jobs:
+  book-return:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create credentials resource
+        env:
+          EBIBLIO_USERNAME: ${{ secrets.EBIBLIO_USERNAME }}
+          EBIBLIO_PASSWORD: ${{ secrets.EBIBLIO_PASSWORD }}
+        shell: bash
+        run: |
+          if [[ -z "$EBIBLIO_USERNAME" || -z "$EBIBLIO_PASSWORD" ]]; then
+            echo "::error::Set the EBIBLIO_USERNAME and EBIBLIO_PASSWORD repository secrets."
+            exit 1
+          fi
+          printf '*** Variables ***\n${USUARIO}    %s\n${PASSWORD}    %s\n' \
+            "$EBIBLIO_USERNAME" "$EBIBLIO_PASSWORD" > credentials.resource
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies and Chromium
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          rfbrowser init chromium
+
+      - name: Run book-return task
+        run: >-
+          python -m robot
+          --outputdir results
+          --output output.xml
+          --log log.html
+          --report report.html
+          --loglevel INFO
+          --removekeywords "name:Fill Text"
+          --variable HEADLESS:True
+          book-return.robot
+
+      - name: Upload Robot reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-return-diagnostics
+          path: |
+            results/output.xml
+            results/log.html
+            results/report.html
+            results/screenshots/
+          if-no-files-found: warn
+          retention-days: 7

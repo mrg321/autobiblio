@@ -156,11 +156,14 @@ outputs.
 The workflow in `.github/workflows/book-loan.yml` runs the book-loan task daily
 at 5 a.m. Madrid time. The workflow in `.github/workflows/book-borrow.yml`
 runs `book-borrow-process.ps1` on Windows, which borrows and downloads books,
-then runs the transformation and Kindle-send tasks. Both workflows can also
-be started manually from the **Actions** tab. The book-loan workflow runs the
-browser headlessly and uploads a `robot-diagnostics` artifact containing the
-Robot output, HTML log and report, and a PNG screenshot when the test fails.
-The artifact is retained for seven days.
+then runs the transformation and Kindle-send tasks. These workflows can also
+be started manually from the **Actions** tab. The book-return workflow can be
+started manually to return available loans. All three workflows run browsers
+headlessly and upload Robot reports; browser workflows also include a
+screenshot when the test fails.
+The book-borrow workflow also uploads a `robot-diagnostics` artifact with its
+Robot reports, failure screenshots and Playwright logs. Diagnostic artifacts
+are retained for seven days.
 
 GitHub Actions schedules use UTC, so the workflows have 3:00 and 4:00 UTC
 triggers and proceed only when it is 5 a.m. in Madrid. Scheduled runs can be
@@ -175,8 +178,8 @@ The book-borrow workflow also requires `KINDLE_SENDER`,
 `KINDLE_APP_PASSWORD`, and `KINDLE_TARGET_EMAIL` secrets for its Kindle-send
 step.
 
-These are live workflows: they can submit a loan or reservation, and the
-book-borrow process can email EPUBs to Kindle. The book-loan workflow can wait
-up to four hours for the newspaper to appear, so a run may use significant
-runner time. Inspect run status and console output in the repository's
-**Actions** tab.
+These are live workflows: they can submit a loan or reservation, return
+available loans, and the book-borrow process can email EPUBs to Kindle. The
+book-loan workflow can wait up to four hours for the newspaper to appear, so
+a run may use significant runner time. Inspect run status and console output
+in the repository's **Actions** tab.

@@ -4,6 +4,7 @@ Library          Browser
 Library          DateTime
 Library          OperatingSystem
 Resource         credentials.resource
+Test Teardown     Capture Screenshot If Test Failed
 
 *** Variables ***
 ${URL_LOGIN}        https://madrid.ebiblio.es/
@@ -51,6 +52,13 @@ Login y Devolver Periódico
     Close Browser
 
 *** Keywords ***
+Capture Screenshot If Test Failed
+    IF    $TEST_STATUS == 'FAIL'
+        ${screenshots_dir}=    Set Variable    ${OUTPUT DIR}${/}screenshots
+        Create Directory    ${screenshots_dir}
+        Take Screenshot    filename=${screenshots_dir}${/}failure.png
+    END
+
 Devolver Libro
     [Arguments]    ${return_button}
     Handle Future Dialogs    action=accept

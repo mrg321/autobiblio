@@ -5,13 +5,11 @@ $pandocExe = Join-Path $PSScriptRoot '.venv\Scripts\pandoc.exe'
 $resultsDir = Join-Path $PSScriptRoot 'results'
 $reportDir = Join-Path $resultsDir 'robot-reports'
 $suites = @(
-    'data-clean.robot'
     'book-borrow.robot'
     'transform-book.robot'
     'pdf-to-text.robot'
     'text-to-epub.robot'
     'send-to-kindle.robot'
-    'book-return.robot'
 )
 
 if (-not (Test-Path -LiteralPath $robotExe -PathType Leaf)) {
@@ -49,16 +47,17 @@ Push-Location $PSScriptRoot
 try {
     foreach ($suite in $suites) {
         $suiteName = [IO.Path]::GetFileNameWithoutExtension($suite)
-        $outputFile = Join-Path $reportDir "$suiteName-output.xml"
-        $logFile = Join-Path $reportDir "$suiteName-log.html"
         $reportFile = Join-Path $reportDir "$suiteName-report.html"
         $stopwatch = [Diagnostics.Stopwatch]::StartNew()
 
         Write-Host "`n=== Running $suite ==="
         & $robotExe `
-            --output $outputFile `
-            --log $logFile `
-            --report $reportFile `
+            --outputdir $reportDir `
+            --output "$suiteName-output.xml" `
+            --log "$suiteName-log.html" `
+            --report "$suiteName-report.html" `
+            --removekeywords 'name:Fill Text' `
+            --variable 'HEADLESS:True' `
             $suite
         $exitCode = $LASTEXITCODE
 
