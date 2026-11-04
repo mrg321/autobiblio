@@ -1,18 +1,13 @@
-name: Daily eBiblio book borrow and processing
+name: eBiblio book borrow and processing
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 9 * * *'
-    - cron: '0 10 * * *'
-    - cron: '0 11 * * *'    
-    - cron: '0 12 * * *'    
 
 permissions:
   contents: read
 
 concurrency:
-  group: daily-book-borrow
+  group: book-borrow
   cancel-in-progress: false
 
 jobs:

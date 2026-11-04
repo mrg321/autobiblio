@@ -1,6 +1,17 @@
 $ErrorActionPreference = 'Stop'
 
-py -3.14 -m venv .venv
+$pythonVersion = & python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+if ($LASTEXITCODE -ne 0) {
+    throw "Python command failed. Install Python 3.14 and ensure 'python' is available on PATH."
+}
+if ($pythonVersion -ne '3.14') {
+    throw "Python 3.14 is required, but 'python' resolved to Python $pythonVersion."
+}
+
+& python -m venv .venv
+if ($LASTEXITCODE -ne 0) {
+    throw 'Failed to create the project virtual environment.'
+}
 & .\.venv\Scripts\python.exe -m pip install --upgrade pip
 & .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 

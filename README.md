@@ -10,6 +10,9 @@ After each successful loan, the workflow downloads the offline-reading file
 offered by eBiblio into `downloads/`, with a timestamped filename. This folder
 is ignored by Git so borrowed content is not committed. The files are available
 to later steps in the same local run or GitHub Actions job.
+The processing step converts decrypted PDFs to text and copies any decrypted
+EPUBs unchanged to `results/epub`. If the decrypted folder contains neither
+format, processing continues without failing.
 
 ## Project contents
 
@@ -153,22 +156,18 @@ outputs.
 
 ## GitHub Actions
 
-The workflow in `.github/workflows/book-loan.yml` runs the book-loan task daily
-at 5 a.m. Madrid time. The workflow in `.github/workflows/book-borrow.yml`
-runs `book-borrow-process.ps1` on Windows, which borrows and downloads books,
-then runs the transformation and Kindle-send tasks. These workflows can also
-be started manually from the **Actions** tab. The book-return workflow can be
-started manually to return available loans. All three workflows run browsers
+The workflow in `.github/workflows/book-loan.yml` runs only when manually
+started from the **Actions** tab or triggered through GitHub's
+`workflow_dispatch` API. The workflow in `.github/workflows/book-borrow.yml` runs
+`book-borrow-process.ps1` on Windows, which borrows and downloads books, then
+runs the transformation and Kindle-send tasks. The book-borrow and book-return
+workflows can be started manually from the **Actions** tab or triggered
+through GitHub's `workflow_dispatch` API. All three workflows run browsers
 headlessly and upload Robot reports; browser workflows also include a
 screenshot when the test fails.
 The book-borrow workflow also uploads a `robot-diagnostics` artifact with its
 Robot reports, failure screenshots and Playwright logs. Diagnostic artifacts
 are retained for seven days.
-
-GitHub Actions schedules use UTC, so the workflows have 3:00 and 4:00 UTC
-triggers and proceed only when it is 5 a.m. in Madrid. Scheduled runs can be
-delayed during busy periods, so this is not an exact-time guarantee. GitHub
-only runs scheduled workflows from the repository's default branch.
 
 Before enabling either workflow, add repository secrets named
 `EBIBLIO_USERNAME` and `EBIBLIO_PASSWORD` under **Settings → Secrets and

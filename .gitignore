@@ -5,3 +5,5 @@ credentials.resource
 downloads/
 PIPE
 vendor/lcpdedrm-cli/lcpdedrm.py
+vendor\pymupdf4llm\__pycache__
+vendor\pypandoc\__pycache__

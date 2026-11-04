@@ -1,15 +1,13 @@
-name: Daily eBiblio book loan
+name: eBiblio book loan
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 7 * * *'
 
 permissions:
   contents: read
 
 concurrency:
-  group: daily-book-loan
+  group: book-loan
   cancel-in-progress: false
 
 jobs:

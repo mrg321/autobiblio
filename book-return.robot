@@ -8,7 +8,7 @@ Test Teardown     Capture Screenshot If Test Failed
 
 *** Variables ***
 ${URL_LOGIN}        https://madrid.ebiblio.es/
-${HEADLESS}         ${False}
+${HEADLESS}         ${True}
 ${OUTPUT_FOLDER}    ${CURDIR}${/}results${/}downloads
 
 *** Test Cases ***
