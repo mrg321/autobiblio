@@ -45,7 +45,7 @@ Login y Obtener Periódico
             Descargar Libro    ${book_index}
         END
     ELSE
-        Log    No hay periódicos disponibles para descarga.    console=True
+        Log    \nNo hay periódicos disponibles para descarga.    console=True
     END
 
     # Verificar disponibilidad del botón de préstamo
@@ -64,7 +64,7 @@ Login y Obtener Periódico
             Descargar Libro
         END
     ELSE
-        Log    No hay periódicos disponibles para préstamo.    console=True
+        Log    \nNo hay periódicos disponibles para préstamo.    console=True
     END
 
     Close Browser
@@ -100,4 +100,4 @@ Descargar Libro
     ...    ${download_dir}${/}${download_timestamp}_${download}[suggestedFilename]
     Move File    ${download}[saveAs]    ${download_file}
     File Should Exist    ${download_file}
-    Log    Archivo descargado: ${download_file}    console=True
+    Log    \n***Archivo descargado: ${download_file}***    console=True

@@ -61,13 +61,13 @@ Send Pending EPUB Books To Kindle
                         ${already_sent}=    Set Variable    ${True}
                     END
                     IF    ${already_sent}
-                        Log    Skipping ${input_file} for ${target}: already marked as sent.
+                        Log    \nSkipping ${input_file} for ${target}: already marked as sent.    console=True
                     END
 
                     IF    ${already_sent}
                         ${skipped}=    Evaluate    ${skipped} + 1
                     ELSE
-                        Log    Sending ${input_file} to ${target}.
+                        Log    \n***Sending ${input_file} to ${target}.***    console=True
                         ${result}=    Run Process
                         ...    ${python}
                         ...    ${SENDER_SCRIPT}
@@ -81,12 +81,12 @@ Send Pending EPUB Books To Kindle
                         IF    ${result.rc} == 0
                             Create File    ${marker_file}    Sent successfully.
                             ${sent}=    Evaluate    ${sent} + 1
-                            Log    Sent and marked: ${input_file} to ${target}
+                            Log    \nSent and marked: ${input_file} to ${target}    console=True
                         ELSE
                             ${failure}=    Set Variable
                             ...    ${input_file} to ${target} (exit code ${result.rc}): ${result.stdout}
                             Append To List    ${failed_files}    ${failure}
-                            Log    ${failure}    level=ERROR
+                            Log    \n${failure}    level=ERROR    console=True
                         END
                     END
                 END
@@ -98,5 +98,5 @@ Send Pending EPUB Books To Kindle
         ...    \nKindle send finished. Successful deliveries: ${sent}. Already sent: ${skipped}. Failed deliveries: ${failed_count}.
         Should Be Empty    ${failed_files}    Some EPUB files could not be sent: ${failed_files}
     ELSE
-        Log    EPUB folder does not exist; skipping Kindle send: ${INPUT_DIR}    console=True
+        Log    \nEPUB folder does not exist; skipping Kindle send: ${INPUT_DIR}    console=True
     END

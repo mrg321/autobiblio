@@ -27,9 +27,9 @@ Transform All Downloaded Books
             ${output_pdf}=    Set Variable    ${output_base}.pdf
             ${pdf_exists}=    Run Keyword And Return Status    File Should Exist    ${output_pdf}
             IF    ${pdf_exists}
-                Log    Skipping ${input_file}: already converted to ${output_pdf}    console=True
+                Log    \nSkipping ${input_file}: already converted to ${output_pdf}    console=True
             ELSE
-                Log    Transforming ${input_file}    console=True
+                Log    \n***Transforming ${input_file}***    console=True
                 ${result}=    Run Process
                 ...    ${python}
                 ...    -m
@@ -42,5 +42,5 @@ Transform All Downloaded Books
             END
         END
     ELSE
-        Log    Downloads directory does not exist; skipping transformation: ${download_dir}    console=True
+        Log    \nDownloads directory does not exist; skipping transformation: ${download_dir}    console=True
     END

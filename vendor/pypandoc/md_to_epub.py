@@ -17,6 +17,7 @@ Ejemplos:
 
 import argparse
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -25,9 +26,13 @@ def convertir_a_epub(
     archivo_salida=None,
     titulo=None,
     autor=None,
-    indice=True
+    indice=True,
+    archivo_portada_pdf=None,
 ):
     entrada = Path(archivo_entrada).resolve()
+    pdf_portada = (
+        Path(archivo_portada_pdf).resolve() if archivo_portada_pdf else None
+    )
 
     # Comprobar archivo de entrada
     if not entrada.is_file():
@@ -68,13 +73,38 @@ def convertir_a_epub(
         argumentos.append("--toc")
         argumentos.append("--toc-depth=2")
 
-    pypandoc.convert_file(
-        str(entrada),
-        to="epub",
-        format="markdown-blank_before_header",
-        outputfile=str(salida),
-        extra_args=argumentos,
-    )
+    with tempfile.TemporaryDirectory() as directorio_temporal:
+        if pdf_portada:
+            if not pdf_portada.is_file():
+                raise FileNotFoundError(
+                    f"No existe el PDF para la portada: {pdf_portada}"
+                )
+
+            try:
+                import pymupdf
+            except ImportError as exc:
+                raise RuntimeError(
+                    "No se encuentra PyMuPDF, necesario para generar la portada."
+                ) from exc
+
+            with pymupdf.open(pdf_portada) as documento:
+                if len(documento) == 0:
+                    raise ValueError(f"El PDF no contiene páginas: {pdf_portada}")
+                imagen_portada = Path(directorio_temporal) / "portada.png"
+                documento[0].get_pixmap(
+                    matrix=pymupdf.Matrix(2, 2),
+                    alpha=False,
+                ).save(str(imagen_portada))
+
+            argumentos.extend(["--epub-cover-image", str(imagen_portada)])
+
+        pypandoc.convert_file(
+            str(entrada),
+            to="epub",
+            format="markdown-blank_before_header",
+            outputfile=str(salida),
+            extra_args=argumentos,
+        )
 
     if not salida.is_file():
         raise RuntimeError("pypandoc no ha generado el archivo epub.")
@@ -108,6 +138,11 @@ def main():
     )
 
     parser.add_argument(
+        "--cover-pdf",
+        help="PDF de origen para generar la portada EPUB con su primera página"
+    )
+
+    parser.add_argument(
         "--toc",
         action="store_true",
         default=True,
@@ -128,7 +163,8 @@ def main():
             archivo_salida=args.output,
             titulo=args.title,
             autor=args.author,
-            indice=args.toc
+            indice=args.toc,
+            archivo_portada_pdf=args.cover_pdf,
         )
 
         print(f"epub generado correctamente: {salida}")

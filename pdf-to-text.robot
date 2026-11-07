@@ -32,9 +32,9 @@ Convertir todos los PDF a texto o copiar EPUB sin modificar
                 ${salida}=    Set Variable    ${OUTPUT_FOLDER}${/}${nombre}.txt
                 ${salida_existe}=    Run Keyword And Return Status    File Should Exist    ${salida}
                 IF    ${salida_existe}
-                    Log    Omitiendo ${pdf}: ya existe ${salida}
+                    Log    \nOmitiendo ${pdf}: ya existe ${salida}    console=True
                 ELSE
-                    Log    Convirtiendo ${pdf} -> ${salida}
+                    Log    \n***Convirtiendo ${pdf} -> ${salida}***    console=True
                     ${resultado}=    Run Process
                     ...    ${python}
                     ...    ${CONVERTER}
@@ -59,14 +59,14 @@ Convertir todos los PDF a texto o copiar EPUB sin modificar
             FOR    ${epub}    IN    @{epub_files}
                 ${nombre}=    Evaluate    pathlib.Path($epub).name    modules=pathlib
                 ${salida_epub}=    Set Variable    ${EPUB_OUTPUT_FOLDER}${/}${nombre}
-                Log    Copiando ${epub} -> ${salida_epub}
+                Log    \nCopiando ${epub} -> ${salida_epub}    console=True
                 Copy File    ${epub}    ${salida_epub}
             END
         END
 
         IF    ${pdf_count} == 0 and ${epub_count} == 0
-            Log    No se encontraron archivos PDF ni EPUB en ${INPUT_DIR}; no hay nada que procesar.    console=True
+            Log    \nNo se encontraron archivos PDF ni EPUB en ${INPUT_DIR}; no hay nada que procesar.    console=True
         END
     ELSE
-        Log    No existe la carpeta de archivos descifrados; se omite la conversión: ${INPUT_DIR}    console=True
+        Log    \nNo existe la carpeta de archivos descifrados; se omite la conversión: ${INPUT_DIR}    console=True
     END

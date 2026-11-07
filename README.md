@@ -12,7 +12,9 @@ is ignored by Git so borrowed content is not committed. The files are available
 to later steps in the same local run or GitHub Actions job.
 The processing step converts decrypted PDFs to text and copies any decrypted
 EPUBs unchanged to `results/epub`. If the decrypted folder contains neither
-format, processing continues without failing.
+format, processing continues without failing. When converting a text file to
+EPUB, the first page of a same-named PDF in `results/decrypted` is used as the
+EPUB cover; text files without a matching PDF are converted without a cover.
 
 ## Project contents
 
