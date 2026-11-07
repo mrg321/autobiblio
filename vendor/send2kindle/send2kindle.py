@@ -26,8 +26,10 @@ def send_book(file_path, sender, password, kindle_email) -> int:
     msg = MIMEMultipart()
     msg['From'] = sender
     msg['To'] = kindle_email
-    # El asunto 'convert' le indica a Amazon que convierta el formato (ej. EPUB)
-    msg['Subject'] = "convert"
+    filename = os.path.basename(file_path)
+    filename = re.sub(r"^\d{8}T\d{12}_", "", filename)
+    book_title = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ")
+    msg['Subject'] = f"convert - {book_title}"
 
     msg.attach(MIMEText("Libro enviado automáticamente desde script de Python.", 'plain'))
 
@@ -38,8 +40,6 @@ def send_book(file_path, sender, password, kindle_email) -> int:
             part.set_payload(attachment.read())
 
         encoders.encode_base64(part)
-        filename = os.path.basename(file_path)
-        filename = re.sub(r"^\d{8}T\d{12}_", "", filename)
         part.add_header("Content-Disposition", f"attachment; filename= {filename}")
         msg.attach(part)
     except OSError as e:

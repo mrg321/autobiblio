@@ -112,7 +112,7 @@ to Kindle, set these variables in the private
 *** Variables ***
 ${KINDLE_SENDER}          your_gmail_address
 ${KINDLE_APP_PASSWORD}    your_gmail_app_password
-${KINDLE_TARGET_EMAIL}    your_kindle_email
+${KINDLE_TARGET_EMAIL}    first_kindle_email, second_kindle_email
 ```
 
 Then run the task from the project root:
@@ -121,13 +121,19 @@ Then run the task from the project root:
 .\.venv\Scripts\robot.exe --outputdir .\results\robot-reports .\send-to-kindle.robot
 ```
 
-The task uses `vendor/send2kindle/send2kindle.py`. It marks an EPUB as sent
-only after the sender reports success and skips files with an existing marker.
+Separate multiple Kindle addresses with commas; surrounding whitespace is
+ignored. The task sends each EPUB to each distinct address, marks each
+file-recipient pair only after the sender reports success, and skips
+file-recipient pairs with an existing marker. Existing `.sent/<filename>.sent`
+markers from the single-recipient version are honored when exactly one address
+is configured. Since those legacy markers do not identify their recipient,
+they are ignored when multiple addresses are configured.
 The timestamp prefix before the first underscore is removed from the Kindle
-attachment name; the local EPUB filename is unchanged.
-To intentionally send a file again, remove its corresponding
-`results/epub/.sent/<filename>.sent` marker. The sender requests Amazon to
-convert the EPUB for Kindle. Do not put credentials in the
+attachment name; the local EPUB filename is unchanged. The email subject starts
+with `convert` followed by the book title derived from the EPUB filename.
+To intentionally send a file again, remove its corresponding recipient marker
+from `results/epub/.sent/`. The sender requests Amazon to convert the EPUB for
+Kindle. Do not put credentials in the
 Robot file or commit them. The task loads credentials from `credentials.resource`
 and supplies them to the sender through its process environment. SMTP errors
 identify the failing connection stage; for authentication errors, verify that
@@ -175,7 +181,7 @@ variables → Actions**. The workflow creates `credentials.resource` at runtime
 from those secrets; do not store credentials in the workflow or repository.
 The book-borrow workflow also requires `KINDLE_SENDER`,
 `KINDLE_APP_PASSWORD`, and `KINDLE_TARGET_EMAIL` secrets for its Kindle-send
-step.
+step. Separate multiple Kindle addresses in `KINDLE_TARGET_EMAIL` with commas.
 
 These are live workflows: they can submit a loan or reservation, return
 available loans, and the book-borrow process can email EPUBs to Kindle. The

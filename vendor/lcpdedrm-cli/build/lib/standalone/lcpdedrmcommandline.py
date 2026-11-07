@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Command-line entry point for decrypting Readium LCP books."""
+"""Command-line entry point prepared for decrypting Readium LCP books. Not actually used in the autobiblio project, but kept for reference."""
 
 import argparse
 import os
@@ -25,7 +25,7 @@ class _OutputTarget:
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="lcpdedrm",
-        description="Decrypt a Readium LCP-encrypted ebook.",
+        description="Prepare to decrypt a Readium LCP-encrypted ebook.",
     )
     parser.add_argument("lcpfile", help="path to the LCP-encrypted ebook")
     parser.add_argument("passphrase", help="LCP passphrase")
