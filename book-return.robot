@@ -46,7 +46,7 @@ Login y Devolver Periódico
             Devolver Libro    ${return_button}
         END
     ELSE
-        Log    No hay periódicos disponibles para devolución.    console=True
+        Log    \nNo hay periódicos disponibles para devolución.    console=True
     END
 
     Close Browser
@@ -65,4 +65,4 @@ Devolver Libro
     Handle Future Dialogs    action=accept
     Click    ${return_button}
     Wait For Elements State    text=Devolución finalizada    visible    timeout=30s
-    Log    Periódico devuelto: ${book_title}    console=True
+    Log    \n***Periódico devuelto: ${book_title}***    console=True
