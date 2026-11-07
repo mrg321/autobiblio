@@ -61,7 +61,8 @@ Capture Screenshot If Test Failed
 
 Devolver Libro
     [Arguments]    ${return_button}
+    ${book_title}=    Get Text    h4.details-content__title.gamma >> nth=0
     Handle Future Dialogs    action=accept
     Click    ${return_button}
     Wait For Elements State    text=Devolución finalizada    visible    timeout=30s
-    Log    Periódico devuelto: ${return_button}    console=True
+    Log    Periódico devuelto: ${book_title}    console=True
