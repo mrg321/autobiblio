@@ -60,7 +60,7 @@ Login y Prestar Periódico
                     Wait For Elements State    text="Confirmar el préstamo"    visible    timeout=20s
                     Click    text="Confirmar el préstamo"
                     Wait For Elements State    text="Tu préstamo expira en"    visible    timeout=20s
-                    Log    ¡Préstamo realizado con éxito!    console=True
+                    Log    ***Préstamo de ${periodico_buscado} realizado con éxito***    console=True
                 END
             ELSE
                 ${is_reservable}=    Run Keyword And Return Status
