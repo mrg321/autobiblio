@@ -27,9 +27,28 @@ if (Test-Path -LiteralPath $pandocExe) {
 }
 
 if ($installedPandocVersion -ne $pandocVersion) {
-    & .\.venv\Scripts\python.exe -c "import pypandoc, sys; pypandoc.download_pandoc(version=sys.argv[1], targetfolder=sys.argv[2], delete_installer=True)" $pandocVersion $venvScripts
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to install Pandoc $pandocVersion."
+    $maxAttempts = 5
+    $downloadExitCode = 1
+
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        Write-Host "Installing Pandoc $pandocVersion (attempt $attempt of $maxAttempts)..."
+
+        & .\.venv\Scripts\python.exe -c "import pypandoc, sys; pypandoc.download_pandoc(version=sys.argv[1], targetfolder=sys.argv[2], delete_installer=True)" $pandocVersion $venvScripts
+        $downloadExitCode = $LASTEXITCODE
+
+        if ($downloadExitCode -eq 0) {
+            break
+        }
+
+        if ($attempt -lt $maxAttempts) {
+            $delaySeconds = [int][Math]::Pow(2, $attempt)
+            Write-Warning "Pandoc download failed (exit code $downloadExitCode). Retrying in $delaySeconds seconds..."
+            Start-Sleep -Seconds $delaySeconds
+        }
+    }
+
+    if ($downloadExitCode -ne 0) {
+        throw "Failed to install Pandoc $pandocVersion after $maxAttempts attempts."
     }
 }
 
