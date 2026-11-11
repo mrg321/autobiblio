@@ -9,7 +9,7 @@ ${ROOT_DIR}       ${CURDIR}
 ${INPUT_DIR}      ${ROOT_DIR}${/}results${/}decrypted
 ${OUTPUT_FOLDER}     ${ROOT_DIR}${/}results${/}txt
 ${EPUB_OUTPUT_FOLDER}    ${ROOT_DIR}${/}results${/}epub
-${CONVERTER}      ${ROOT_DIR}${/}vendor${/}pymupdf4llm${/}convert_pdf_to_text.py
+${CONVERTER}      ${ROOT_DIR}${/}vendor${/}docling${/}pdf2text-docling.py
 
 *** Test Cases ***
 Convertir todos los PDF a texto o copiar EPUB sin modificar

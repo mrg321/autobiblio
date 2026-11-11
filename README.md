@@ -30,6 +30,9 @@ EPUB cover; text files without a matching PDF are converted without a cover.
 - `setup.ps1` — creates the Python virtual environment, installs dependencies,
   and initializes the Browser library with Chromium.
 - `run.ps1` — runs the Robot Framework test.
+- `pdf-to-text.robot` — converts decrypted PDFs to Markdown with
+  `vendor/docling/pdf2text-docling.py` and copies decrypted EPUBs to
+  `results/epub`.
 - `text-to-articles.robot` — processes files in `results/txt` once, saving each
   input's articles separately under `results/cleaned_articles`.
 - `send-to-kindle.robot` — sends EPUB files directly from `results/epub` to
@@ -41,6 +44,9 @@ EPUB cover; text files without a matching PDF are converted without a cover.
 - Python 3.14 installed.
 - Node.js and npm installed and available on `PATH`.
 - Internet access for installing Python packages and downloading Chromium.
+
+Docling downloads its PDF layout models during the first PDF conversion; allow
+internet access for that initial run.
 
 ## Install
 
