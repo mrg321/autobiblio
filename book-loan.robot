@@ -12,6 +12,8 @@ ${URL_LOGIN}        https://madrid.ebiblio.es/
 @{PERIODICO}        El País, edición Madrid    El Mundo (Ed. Nacional)
 ${HEADLESS}         ${True}
 ${DOWNLOAD}         ${False}
+${OFFLINE_DOWNLOAD_LINK}    xpath=//a[normalize-space(.)="Leer sin conexión desde un ordenador (con Thorium Reader)" or
+...                         normalize-space(.)="Escuchar sin conexión en un ordenador"]
 
 *** Test Cases ***
 Login y Prestar Periódico
@@ -68,7 +70,7 @@ Login y Prestar Periódico
                 IF    ${is_reservable}
                     Click    button:has-text("Reservar")
                     Wait For Elements State    text="Confirmación de la reserva"    visible    timeout=10s
-                    Log    ¡Reserva realizada con éxito!    console=True
+                    Log    ***Reserva de ${periodico_buscado} realizada con éxito!***    console=True
                 ELSE
                     Log    ${periodico_buscado} no está disponible ni es reservable.    console=True
                 END
@@ -100,7 +102,7 @@ Prestar Y Descargar Libro
 
     IF    ${DOWNLOAD}
         Wait For Elements State
-        ...    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"]
+        ...    ${OFFLINE_DOWNLOAD_LINK}
         ...    visible
         ...    timeout=20s
         ${download_dir}=    Set Variable    ${OUTPUT DIR}${/}downloads
@@ -111,7 +113,7 @@ Prestar Y Descargar Libro
         ${download_promise}=    Promise To Wait For Download
         ...    ${download_path}
         ...    download_timeout=5 minutes
-        Click    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"]
+        Click    ${OFFLINE_DOWNLOAD_LINK}
         ${download}=    Wait For    ${download_promise}
         Should Not Be Empty    ${download}[suggestedFilename]
         ${download_file}=    Set Variable

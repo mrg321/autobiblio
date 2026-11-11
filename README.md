@@ -6,10 +6,11 @@ current-day edition of each newspaper in the `@{PERIODICO}` list in
 `book-loan.robot`; add other exact catalog titles as additional list values.
 When an edition is available, the test attempts to borrow it; otherwise, it
 attempts to place a reservation if that option is offered.
-After each successful loan, the workflow downloads the offline-reading file
-offered by eBiblio into `downloads/`, with a timestamped filename. This folder
-is ignored by Git so borrowed content is not committed. The files are available
-to later steps in the same local run or GitHub Actions job.
+After each successful loan, the workflow downloads the offline-reading or
+offline-listening file offered by eBiblio into `downloads/`, with a timestamped
+filename. This supports both e-books and audiobooks. This folder is ignored by
+Git so borrowed content is not committed. The files are available to later
+steps in the same local run or GitHub Actions job.
 The processing step converts decrypted PDFs to text and copies any decrypted
 EPUBs unchanged to `results/epub`. If the decrypted folder contains neither
 format, processing continues without failing. When converting a text file to

@@ -26,8 +26,10 @@ Transform All Downloaded Books
             ${output_base}=    Set Variable    ${output_dir}${/}${download_stem}
             ${output_pdf}=    Set Variable    ${output_base}.pdf
             ${pdf_exists}=    Run Keyword And Return Status    File Should Exist    ${output_pdf}
-            IF    ${pdf_exists}
-                Log    \nSkipping ${input_file}: already converted to ${output_pdf}    console=True
+            ${output_zip}=    Set Variable    ${output_base}.zip
+            ${zip_exists}=    Run Keyword And Return Status    File Should Exist    ${output_zip}
+            IF    ${pdf_exists} or ${zip_exists}
+                Log    \nSkipping ${input_file}: already converted    console=True
             ELSE
                 Log    \n***Transforming ${input_file}***    console=True
                 ${result}=    Run Process

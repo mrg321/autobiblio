@@ -10,6 +10,8 @@ Test Teardown     Capture Screenshot If Test Failed
 ${URL_LOGIN}        https://madrid.ebiblio.es/
 ${HEADLESS}         ${True}
 ${OUTPUT_FOLDER}    ${CURDIR}${/}results${/}downloads
+${OFFLINE_DOWNLOAD_LINK}    xpath=//a[normalize-space(.)="Leer sin conexión desde un ordenador (con Thorium Reader)" or
+...                         normalize-space(.)="Escuchar sin conexión en un ordenador"]
 
 *** Test Cases ***
 Login y Obtener Periódico
@@ -31,21 +33,21 @@ Login y Obtener Periódico
     # Abrir préstamos y reservas activos
     New Page         ${URL_LOGIN}my_profile/activity
 
-    # Verificar disponibilidad de libros para descargar
+    # Verificar disponibilidad de libros o audiolibros para descargar
     ${is_available}=    Run Keyword And Return Status    
-    ...                 Wait For Elements State    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"] >> nth=0    visible    timeout=20s
-    # Procesar todos los periódicos disponibles para descarga
+    ...                 Wait For Elements State    ${OFFLINE_DOWNLOAD_LINK} >> nth=0    visible    timeout=20s
+    # Procesar todos los contenidos disponibles para descarga
     IF    ${is_available}
-        ${available_count}=    Get Element Count    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"]
+        ${available_count}=    Get Element Count    ${OFFLINE_DOWNLOAD_LINK}
         FOR    ${book_index}    IN RANGE    ${available_count}
             IF    ${book_index} > 0
                 Go To    ${URL_LOGIN}my_profile/activity
-                Wait For Elements State    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"] >> nth=${book_index}    visible    timeout=20s
+                Wait For Elements State    ${OFFLINE_DOWNLOAD_LINK} >> nth=${book_index}    visible    timeout=20s
             END
-            Descargar Libro    ${book_index}
+            Descargar Contenido Offline    ${book_index}
         END
     ELSE
-        Log    \nNo hay periódicos disponibles para descarga.    console=True
+        Log    \nNo hay libros ni audiolibros disponibles para descarga.    console=True
     END
 
     # Verificar disponibilidad del botón de préstamo
@@ -61,7 +63,7 @@ Login y Obtener Periódico
                 Wait For Elements State    role=link[name="Prestar"]    visible    timeout=20s
             END
             Click    role=link[name="Prestar"] >> nth=0
-            Descargar Libro
+            Descargar Contenido Offline
         END
     ELSE
         Log    \nNo hay periódicos disponibles para préstamo.    console=True
@@ -77,10 +79,9 @@ Capture Screenshot If Test Failed
         Take Screenshot    filename=${screenshots_dir}${/}failure.png
     END
 
-Descargar Libro
+Descargar Contenido Offline
     [Arguments]    ${link_index}=0
-    ${download_link}=    Set Variable
-    ...    role=link[name="Leer sin conexión desde un ordenador (con Thorium Reader)"] >> nth=${link_index}
+    ${download_link}=    Set Variable    ${OFFLINE_DOWNLOAD_LINK} >> nth=${link_index}
     Wait For Elements State
     ...    ${download_link}
     ...    visible

@@ -8,6 +8,10 @@ import re
 import sys
 from pathlib import Path
 
+TITULO_MINIMO = 20
+TITULO_MAXIMO = 130
+TITULO_MINIMO_PALABRAS = 4
+
 def limpiar_lineas_en_blanco(texto: str) -> str:
     # Normalizar saltos de línea
     texto = texto.replace("\r\n", "\n").replace("\r", "\n")
@@ -68,11 +72,12 @@ def convertir_titulos_en_encabezados(texto: str) -> str:
                     bloques[indice + 1] if indice + 1 < len(bloques) else ""
                 )
                 siguiente = indice + 2
-
+            
+            # Verifica si el título cumple con los criterios de longitud y número de palabras
             palabras = re.findall(r"\w+", titulo, flags=re.UNICODE)
             if (
-                20 <= len(titulo) <= 130
-                and len(palabras) >= 3
+                TITULO_MINIMO <= len(titulo) <= TITULO_MAXIMO
+                and len(palabras) >= TITULO_MINIMO_PALABRAS
                 and not titulo.endswith(".")
             ):
                 resultado.append(f"## {titulo}{separador}")
@@ -85,6 +90,55 @@ def convertir_titulos_en_encabezados(texto: str) -> str:
 
     return "".join(resultado)
 
+def custom_headers(span, page=None):
+    # 1. Obtener el texto del span y limpiarlo de espacios sobrantes
+    texto = span.get("text", "").strip()
+    
+    if not texto:
+        return ""
+        
+    # 2. Definir tamaño de fuente y propiedades de estilo
+    size = span.get("size", 0)
+    flags = span.get("flags", 0)
+    font_name = span.get("font", "")
+    
+    # Detectar si el texto está en negrita (bit 16 en PyMuPDF o nombre de fuente 'Bold')
+    es_negrita = bool(flags & 16) or "Bold" in font_name
+    
+    # --- REGLAS DE FILTRADO ---
+    
+    # A. Rango de tamaño de fuente (opcional)
+    # if not (12 <= size <= 64):
+    #     return ""  
+        
+    # B. Número mínimo de palabras
+    # FLEXIBILIDAD: Si es un título en negrita, permitimos que tenga menos palabras (ej. mínimo 1 o 2)
+    # para no descartar líneas como "ALTA JOYERÍA" o "VICTORIA LUENGO".
+    palabras = texto.split()
+    min_palabras_requerido = 1 if es_negrita else TITULO_MINIMO_PALABRAS
+    
+    if len(palabras) < min_palabras_requerido:
+        return ""
+        
+    # C. Caracteres prohibidos al inicio o al final
+    caracteres_inicio_prohibidos = ("-", ".", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+    caracteres_fin_prohibidos = (",", ".", ";")
+    
+    if texto.startswith(caracteres_inicio_prohibidos) or texto.endswith(caracteres_fin_prohibidos):
+        return ""
+
+    # D. Si el primer carácter es una letra, debe ser obligatoriamente mayúscula
+    primer_caracter = texto[0]
+    if primer_caracter.isalpha() and not primer_caracter.isupper():
+        return ""  # Se descarta si empieza con minúscula
+    
+    # --- ASIGNACIÓN DE NIVEL DE ENCABEZADO SEGÚN TAMAÑO O ESTILO ---
+    if size > 16 or (es_negrita and size > 14):
+        return "# "
+    elif size > 12 or (es_negrita and size >= 11):
+        return "## "
+        
+    return ""
 
 def convert_pdf(input_path: Path, output_path: Path) -> int:
     try:
@@ -107,14 +161,17 @@ def convert_pdf(input_path: Path, output_path: Path) -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
+        #headers = pymupdf4llm.IdentifyHeaders(str(input_path), max_levels=3)
+
         # Reconstruye el orden de lectura y devuelve texto con estructura Markdown.
         # Se guarda en .txt para que sea fácil de consumir como texto.
         text = pymupdf4llm.to_markdown(
             str(input_path),
-            hdr_info=False,
-            header=True,
-            footer=True,
+            #hdr_info=custom_headers,
+            header=False,
+            footer=False,
             pages=None,
+            ignore_images=False,
             write_images=False,
             embed_images=False,
             force_text=True,
@@ -143,8 +200,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Convierte un PDF a texto usando PyMuPDF4LLM."
     )
-    parser.add_argument("--input", required=True, type=Path, help="PDF de entrada")
-    parser.add_argument("--output", required=True, type=Path, help="TXT de salida")
+    parser.add_argument(
+        "--input",
+        type=Path,
+        help="PDF de entrada",
+        default=Path(
+            "results/decrypted/20261108T142801358696_el-mundo-ed-nacional-8-11-2026.pdf"
+        ),
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="TXT de salida",
+        default=Path(
+            "results/txt/20261108T142801358696_el-mundo-ed-nacional-8-11-2026.txt"
+        ),
+    )
     args = parser.parse_args()
     return convert_pdf(args.input.resolve(), args.output.resolve())
 

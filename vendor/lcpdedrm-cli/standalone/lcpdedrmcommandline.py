@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Command-line entry point prepared for decrypting Readium LCP books. Not actually used in the autobiblio project, but kept for reference."""
+"""Command-line entry point for decrypting Readium LCP books."""
 
 import argparse
+import getpass
 import os
+import sys
 
+# Support running this file directly from the source checkout.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lcpdedrm
+
+
+DEFAULT_LCPFILE = "futuro-a-la-vista.lcpl"
 
 
 class _TemporaryFile:
@@ -25,20 +32,32 @@ class _OutputTarget:
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="lcpdedrm",
-        description="Prepare to decrypt a Readium LCP-encrypted ebook.",
+        description="Decrypt a Readium LCP-encrypted ebook or audiobook.",
     )
-    parser.add_argument("lcpfile", help="path to the LCP-encrypted ebook")
-    parser.add_argument("passphrase", help="LCP passphrase")
     parser.add_argument(
-        "outputname",
-        help="output path without an extension; the correct extension is added",
+        "arguments",
+        nargs="*",
+        metavar="ARG",
+        help="passphrase and outputname, or lcpfile, passphrase, and outputname",
     )
     args = parser.parse_args(argv)
 
-    output_name = os.path.abspath(args.outputname)
+    if not args.arguments:
+        lcpfile = DEFAULT_LCPFILE
+        passphrase = getpass.getpass("LCP passphrase: ")
+        outputname = os.path.splitext(os.path.basename(lcpfile))[0]
+    elif len(args.arguments) == 2:
+        lcpfile = DEFAULT_LCPFILE
+        passphrase, outputname = args.arguments
+    elif len(args.arguments) == 3:
+        lcpfile, passphrase, outputname = args.arguments
+    else:
+        parser.error("provide passphrase and outputname, with optional lcpfile")
+
+    output_name = os.path.abspath(outputname)
     result = lcpdedrm.decryptLCPbook(
-        args.lcpfile,
-        [args.passphrase],
+        lcpfile,
+        [passphrase],
         _OutputTarget(output_name),
     )
     return 0 if result is not None else 1
