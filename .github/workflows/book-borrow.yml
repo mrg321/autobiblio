@@ -77,16 +77,36 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Cache Chromium
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\playwright-browsers
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install dependencies and Chromium
         shell: pwsh
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}\playwright-browsers
         run: |
           Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
           .\setup.ps1
+
+      - name: Cache Docling models
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\docling-models
+          key: ${{ runner.os }}-docling-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-docling-
 
       - name: Run book-borrow process
         shell: pwsh
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DOCLING_ARTIFACTS_PATH: ${{ runner.temp }}\docling-models
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}\playwright-browsers
         run: .\book-borrow-process.ps1
 
       - name: Upload downloaded books

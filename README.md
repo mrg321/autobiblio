@@ -46,7 +46,9 @@ EPUB cover; text files without a matching PDF are converted without a cover.
 - Internet access for installing Python packages and downloading Chromium.
 
 Docling downloads its PDF layout models during the first PDF conversion; allow
-internet access for that initial run.
+internet access for that initial run. The GitHub Actions book-borrow workflow
+caches these models and Chromium between runs, though GitHub may evict old
+caches.
 
 ## Install
 

@@ -57,6 +57,7 @@ if ($LASTEXITCODE -ne 0 -or $pandocVersionOutput[0] -notmatch "^pandoc\s+$([rege
     throw "Pandoc $pandocVersion is not available in the project virtual environment."
 }
 
-# Keep Playwright's Chromium browser cache inside this venv.
-$env:PLAYWRIGHT_BROWSERS_PATH = '0'
+if ([string]::IsNullOrWhiteSpace($env:PLAYWRIGHT_BROWSERS_PATH)) {
+    $env:PLAYWRIGHT_BROWSERS_PATH = '0'
+}
 & .\.venv\Scripts\rfbrowser.exe init chromium

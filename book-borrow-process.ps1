@@ -40,7 +40,9 @@ if ($missingSuites.Count -gt 0) {
 }
 
 New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
-$env:PLAYWRIGHT_BROWSERS_PATH = '0'
+if ([string]::IsNullOrWhiteSpace($env:PLAYWRIGHT_BROWSERS_PATH)) {
+    $env:PLAYWRIGHT_BROWSERS_PATH = '0'
+}
 $runResults = @()
 
 Push-Location $PSScriptRoot
