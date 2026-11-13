@@ -101,6 +101,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-docling-
 
+      - name: Download Docling models
+        shell: pwsh
+        env:
+          DOCLING_ARTIFACTS_PATH: ${{ runner.temp }}\docling-models
+        run: |
+          & .\.venv\Scripts\docling-tools.exe models download --output-dir $env:DOCLING_ARTIFACTS_PATH
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to download the Docling models required for PDF conversion.'
+          }
+
       - name: Run book-borrow process
         shell: pwsh
         env:

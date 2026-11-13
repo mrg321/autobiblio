@@ -25,7 +25,7 @@ def convert_pdf(input_path: Path, output_path: Path) -> int:
         )
         return INVALID_INPUT_EXIT_CODE
 
-    converter = DocumentConverter()
+    converter = DocumentConverter(show_progress=True)
     result = converter.convert(str(input_path))
     try:
         markdown = result.document.export_to_markdown()

@@ -3,6 +3,7 @@ Documentation     Convierte los PDF y copia los EPUB de results/decrypted.
 ...               No falla si no hay archivos PDF ni EPUB.
 Library           OperatingSystem
 Library           Process
+Library           Collections
 
 *** Variables ***
 ${ROOT_DIR}       ${CURDIR}
@@ -16,6 +17,7 @@ Convertir todos los PDF a texto o copiar EPUB sin modificar
     [Documentation]    Convierte PDF a TXT y copia EPUB sin modificar a results/epub.
     ${input_dir_exists}=    Run Keyword And Return Status
     ...    Directory Should Exist    ${INPUT_DIR}
+    @{pdf_failures}=    Create List
     IF    ${input_dir_exists}
         @{pdf_files}=    List Files In Directory    ${INPUT_DIR}    pattern=*.pdf    absolute=True
         @{epub_files}=    List Files In Directory    ${INPUT_DIR}    pattern=*.epub    absolute=True
@@ -30,26 +32,10 @@ Convertir todos los PDF a texto o copiar EPUB sin modificar
             FOR    ${pdf}    IN    @{pdf_files}
                 ${nombre}=    Evaluate    pathlib.Path($pdf).stem    modules=pathlib
                 ${salida}=    Set Variable    ${OUTPUT_FOLDER}${/}${nombre}.txt
-                ${salida_existe}=    Run Keyword And Return Status    File Should Exist    ${salida}
-                IF    ${salida_existe}
-                    Log    \nOmitiendo ${pdf}: ya existe ${salida}    console=True
-                ELSE
-                    Log    \n***Convirtiendo ${pdf} -> ${salida}***    console=True
-                    ${resultado}=    Run Process
-                    ...    ${python}
-                    ...    ${CONVERTER}
-                    ...    --input
-                    ...    ${pdf}
-                    ...    --output
-                    ...    ${salida}
-                    ...    cwd=${ROOT_DIR}
-                    ...    stdout=PIPE
-                    ...    stderr=PIPE
-                    Should Be Equal As Integers    ${resultado.rc}    0
-                    ...    msg=Falló la conversión de ${pdf}\nSTDOUT:\n${resultado.stdout}\nSTDERR:\n${resultado.stderr}
-                    File Should Exist    ${salida}
-                    ${tamano}=    Get File Size    ${salida}
-                    Should Be True    ${tamano} > 0    El TXT generado está vacío: ${salida}
+                ${error}=    Convertir PDF si hace falta    ${python}    ${pdf}    ${salida}
+                IF    $error
+                    Append To List    ${pdf_failures}    ${error}
+                    Log    ${error}    level=WARN    console=True
                 END
             END
         END
@@ -70,3 +56,56 @@ Convertir todos los PDF a texto o copiar EPUB sin modificar
     ELSE
         Log    \nNo existe la carpeta de archivos descifrados; se omite la conversión: ${INPUT_DIR}    console=True
     END
+
+    ${failure_count}=    Get Length    ${pdf_failures}
+    IF    ${failure_count} > 0
+        ${failure_summary}=    Catenate    SEPARATOR=\n    @{pdf_failures}
+        Fail    Fallaron ${failure_count} conversiones de PDF:\n${failure_summary}
+    END
+
+*** Keywords ***
+Convertir PDF si hace falta
+    [Arguments]    ${python}    ${pdf}    ${salida}
+    ${salida_status}    ${salida_size}=    Run Keyword And Ignore Error
+    ...    Get File Size    ${salida}
+    IF    $salida_status == "PASS" and $salida_size > 0
+        Log    \nOmitiendo ${pdf}: ya existe ${salida}    console=True
+        RETURN    ${EMPTY}
+    END
+
+    Log    \n***Convirtiendo ${pdf} -> ${salida}***    console=True
+    ${process_status}    ${resultado}=    Run Keyword And Ignore Error
+    ...    Run Process
+    ...    ${python}
+    ...    ${CONVERTER}
+    ...    --input
+    ...    ${pdf}
+    ...    --output
+    ...    ${salida}
+    ...    cwd=${ROOT_DIR}
+    ...    stdout=PIPE
+    ...    stderr=PIPE
+    IF    $process_status == "FAIL"
+        RETURN    No se pudo iniciar la conversión de ${pdf}: ${resultado}
+    END
+
+    IF    ${resultado.rc} != 0
+        ${error}=    Catenate    SEPARATOR=\n
+        ...    Falló la conversión de ${pdf} (código ${resultado.rc}).
+        ...    STDOUT:
+        ...    ${resultado.stdout}
+        ...    STDERR:
+        ...    ${resultado.stderr}
+        RETURN    ${error}
+    END
+
+    ${salida_status}    ${salida_size}=    Run Keyword And Ignore Error
+    ...    Get File Size    ${salida}
+    IF    $salida_status == "FAIL"
+        RETURN    La conversión de ${pdf} terminó sin generar ${salida}: ${salida_size}
+    END
+    IF    ${salida_size} == 0
+        RETURN    La conversión de ${pdf} generó un TXT vacío: ${salida}
+    END
+
+    RETURN    ${EMPTY}
