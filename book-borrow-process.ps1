@@ -75,13 +75,6 @@ try {
         Write-Host ("{0}: {1} (exit code {2}, {3:N1}s)" -f `
             $status, $suite, $exitCode, $stopwatch.Elapsed.TotalSeconds)
         Write-Host "Reports: $reportFile"
-
-        if ($exitCode -ne 0) {
-            Write-Host "`nRun summary:"
-            $runResults | Format-Table Suite, Status, ExitCode, Duration -AutoSize
-            Write-Host "Stopping after '$suite' failed with exit code $exitCode."
-            exit $exitCode
-        }
     }
 }
 finally {
@@ -90,4 +83,10 @@ finally {
 
 Write-Host "`nRun summary:"
 $runResults | Format-Table Suite, Status, ExitCode, Duration -AutoSize
+$failedResults = @($runResults | Where-Object { $_.ExitCode -ne 0 })
+if ($failedResults.Count -gt 0) {
+    Write-Host "All Robot tasks were attempted; $($failedResults.Count) suite(s) failed."
+    exit $failedResults[0].ExitCode
+}
+
 Write-Host "All Robot tasks completed successfully."
