@@ -19,7 +19,10 @@ Convertir todos los PDF a texto o copiar EPUB sin modificar
     ...    Directory Should Exist    ${INPUT_DIR}
     @{pdf_failures}=    Create List
     IF    ${input_dir_exists}
-        @{pdf_files}=    List Files In Directory    ${INPUT_DIR}    pattern=*.pdf    absolute=True
+        @{input_files}=    List Files In Directory    ${INPUT_DIR}    absolute=True
+        @{pdf_files}=    Evaluate
+        ...    [path for path in $input_files if pathlib.Path(path).suffix.lower() == ".pdf"]
+        ...    modules=pathlib
         @{epub_files}=    List Files In Directory    ${INPUT_DIR}    pattern=*.epub    absolute=True
         ${pdf_count}=    Get Length    ${pdf_files}
         ${epub_count}=    Get Length    ${epub_files}

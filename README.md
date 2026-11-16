@@ -22,6 +22,7 @@ EPUB cover; text files without a matching PDF are converted without a cover.
 - `book-loan.robot` — the Robot Framework test and browser workflow.
 - `book-borrow-process.ps1` — runs the book-borrow, conversion, and Kindle-send
   suites in sequence.
+- `book-borrow-process.sh` — Linux equivalent of the book-borrow process.
 - `.github/workflows/book-borrow.yml` — prepares the Windows runner and runs
   the book-borrow process daily.
 - `credentials.resource` — local eBiblio login variables. This file is excluded
@@ -29,10 +30,13 @@ EPUB cover; text files without a matching PDF are converted without a cover.
 - `requirements.txt` — pinned Python dependencies.
 - `setup.ps1` — creates the Python virtual environment, installs dependencies,
   and initializes the Browser library with Chromium.
+- `setup.sh` — Linux equivalent of the project setup script.
 - `run.ps1` — runs the Robot Framework test.
 - `pdf-to-text.robot` — converts decrypted PDFs to Markdown with
   `vendor/docling/pdf2text-docling.py` and copies decrypted EPUBs to
   `results/epub`.
+- `txt-to-summary.robot` — summarizes TXT files in `results/txt` with Sumy
+  and saves the summaries under `results/summaries`.
 - `text-to-articles.robot` — processes files in `results/txt` once, saving each
   input's articles separately under `results/cleaned_articles`.
 - `send-to-kindle.robot` — sends EPUB files directly from `results/epub` to
@@ -48,7 +52,8 @@ EPUB cover; text files without a matching PDF are converted without a cover.
 Docling downloads its PDF layout models during the first PDF conversion; allow
 internet access for that initial run. The GitHub Actions book-borrow workflow
 caches these models and Chromium between runs, though GitHub may evict old
-caches.
+caches. Setup also downloads NLTK's `punkt_tab` data for Sumy's sentence
+tokenizer.
 
 ## Install
 
@@ -62,22 +67,17 @@ Set-ExecutionPolicy -Scope Process Bypass
 On Linux, open a shell in the project folder and run:
 
 ```sh
-python3.14 -m venv .venv
-. .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-PLAYWRIGHT_BROWSERS_PATH=0 rfbrowser init chromium
+chmod +x setup.sh book-borrow-process.sh
+./setup.sh
 ```
 
-The Windows setup also installs the pinned Pandoc executable into `.venv`.
-On Linux, install Pandoc separately and ensure `pandoc` is available on `PATH`
-before running `text-to-epub.robot`.
+The setup scripts install the pinned Pandoc executable into `.venv` and
+initialize Chromium in the venv-local Playwright browser cache. On Linux,
+setup also installs Chromium's system dependencies, which requires `sudo`
+access (available on GitHub-hosted Ubuntu runners).
 
-The setup creates `.venv` in the project folder and installs Chromium into the
-venv-local Playwright browser cache. You do not need to copy a pre-existing
-`.venv` from another computer. The `setup.ps1` and `run.ps1` helpers are for
-Windows; on Linux, activate `.venv` as shown above and run Robot Framework
-directly.
+The setup creates `.venv` in the project folder. You do not need to copy a
+pre-existing `.venv` from another computer.
 
 Create `credentials.resource` in the project folder with your own eBiblio
 credentials:
@@ -103,13 +103,19 @@ From the project folder, run:
 On Linux, with `.venv` activated, run:
 
 ```sh
-PLAYWRIGHT_BROWSERS_PATH=0 python -m robot book-loan.robot
+.venv/bin/python -m robot book-loan.robot
 ```
 
-The script sets `PLAYWRIGHT_BROWSERS_PATH=0` so Playwright uses the browser
-cache installed with this venv, then runs the Robot tasks in sequence. It stops
-on the first nonzero Robot exit code and displays a status and duration for
-each task. Separate XML, log, and report files are saved under
+To run the full book-borrow and processing sequence on Linux, use
+`./book-borrow-process.sh`. It runs the same five suites as the PowerShell
+script, attempts every suite, and saves separate XML, log, and report files
+under `results/robot-reports/`.
+
+The run helpers set `PLAYWRIGHT_BROWSERS_PATH=0` so Playwright uses the browser
+cache installed with this venv. The book-borrow process displays a status and
+duration for each task, attempts every suite, and returns a nonzero exit code
+if any suite fails.
+Separate XML, log, and report files are saved under
 `results/robot-reports/`. Successful loans also save the eBiblio download
 under `downloads/` on both platforms. The provider may supply an offline-reader
 file rather than a plain PDF; the automation saves the file as offered and
@@ -173,18 +179,15 @@ outputs.
 
 ## GitHub Actions
 
-The workflow in `.github/workflows/book-loan.yml` runs only when manually
-started from the **Actions** tab or triggered through GitHub's
-`workflow_dispatch` API. The workflow in `.github/workflows/book-borrow.yml` runs
-`book-borrow-process.ps1` on Windows, which borrows and downloads books, then
-runs the transformation and Kindle-send tasks. The book-borrow and book-return
-workflows can be started manually from the **Actions** tab or triggered
-through GitHub's `workflow_dispatch` API. All three workflows run browsers
-headlessly and upload Robot reports; browser workflows also include a
-screenshot when the test fails.
-The book-borrow workflow also uploads a `robot-diagnostics` artifact with its
-Robot reports, failure screenshots and Playwright logs. Diagnostic artifacts
-are retained for seven days.
+The workflows can be started manually from the **Actions** tab or through
+GitHub's `workflow_dispatch` API. `book-borrow.yml` runs the complete borrow,
+conversion, and Kindle-send process on Windows;
+`book-borrow-linux.yml` runs the equivalent Linux scripts on Ubuntu.
+`book-loan-linux.yml` and `book-return-linux.yml` are Linux variants of the
+book-loan and book-return workflows. Browser workflows run headlessly and
+upload Robot reports; browser workflows also include a screenshot when a test
+fails. The book-borrow workflows upload reports, failure screenshots, and
+Playwright logs in a diagnostic artifact retained for seven days.
 
 Before enabling either workflow, add repository secrets named
 `EBIBLIO_USERNAME` and `EBIBLIO_PASSWORD` under **Settings → Secrets and

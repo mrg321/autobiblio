@@ -1,0 +1,134 @@
+name: eBiblio book borrow and processing (Linux)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: book-borrow
+  cancel-in-progress: false
+
+jobs:
+  book-borrow-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Create credentials resource
+        env:
+          EBIBLIO_USERNAME: ${{ secrets.EBIBLIO_USERNAME }}
+          EBIBLIO_PASSWORD: ${{ secrets.EBIBLIO_PASSWORD }}
+          KINDLE_SENDER: ${{ secrets.KINDLE_SENDER }}
+          KINDLE_APP_PASSWORD: ${{ secrets.KINDLE_APP_PASSWORD }}
+          KINDLE_TARGET_EMAIL: ${{ secrets.KINDLE_TARGET_EMAIL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_secrets=(
+            EBIBLIO_USERNAME
+            EBIBLIO_PASSWORD
+            KINDLE_SENDER
+            KINDLE_APP_PASSWORD
+            KINDLE_TARGET_EMAIL
+          )
+          for secret_name in "${required_secrets[@]}"; do
+            if [[ -z "${!secret_name}" ]]; then
+              echo "::error::Set the ${secret_name} repository secret."
+              exit 1
+            fi
+          done
+
+          umask 077
+          printf '*** Variables ***\n${USUARIO}    %s\n${PASSWORD}    %s\n${KINDLE_SENDER}    %s\n${KINDLE_APP_PASSWORD}    %s\n${KINDLE_TARGET_EMAIL}    %s\n' \
+            "$EBIBLIO_USERNAME" \
+            "$EBIBLIO_PASSWORD" \
+            "$KINDLE_SENDER" \
+            "$KINDLE_APP_PASSWORD" \
+            "$KINDLE_TARGET_EMAIL" \
+            > credentials.resource
+
+      - name: Restore private Python script
+        shell: bash
+        env:
+          ADDITIONAL_SCRIPT: ${{ secrets.EXTRA_CODE }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$ADDITIONAL_SCRIPT" ]]; then
+            echo '::error::Set the EXTRA_CODE repository secret.'
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$ADDITIONAL_SCRIPT" > vendor/lcpdedrm-cli/lcpdedrm.py
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: bash setup.sh
+
+      - name: Cache Docling models
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/docling-models
+          key: ${{ runner.os }}-docling-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-docling-
+
+      - name: Download Docling models
+        shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DOCLING_ARTIFACTS_PATH: ${{ runner.temp }}/docling-models
+        run: |
+          set -euo pipefail
+          .venv/bin/docling-tools models download --output-dir "$DOCLING_ARTIFACTS_PATH"
+
+      - name: Run book-borrow process
+        shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DOCLING_ARTIFACTS_PATH: ${{ runner.temp }}/docling-models
+          PLAYWRIGHT_BROWSERS_PATH: '0'
+        run: bash book-borrow-process.sh
+
+      - name: Upload decrypted books
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ebiblio-book-borrow-linux-decrypted
+          path: results/decrypted/
+          if-no-files-found: warn
+          retention-days: 4
+
+      - name: Upload converted text
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ebiblio-book-borrow-linux-txt
+          path: results/txt/
+          if-no-files-found: warn
+          retention-days: 4
+
+      - name: Upload Robot reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-diagnostics-linux
+          path: |
+            results/robot-reports/
+            playwright-log*.txt
+            results/playwright-log*.txt
+          if-no-files-found: warn
+          retention-days: 7
